@@ -1,0 +1,230 @@
+000015B8 Starting Address
+Assembler used: EASy68K Editor/Assembler v5.16.01
+Created On: 10/10/2024 7:34:17 PM
+
+00000000                             1  *-----------------------------------------------------------
+00000000                             2  * Title      : General object
+00000000                             3  * Written by : Juno Strunk
+00000000                             4  * Date       : 10/4/24
+00000000                             5  * Description:
+00000000                             6  *-----------------------------------------------------------
+00000000                             7  
+00000000                             8  * Object header needs to hold coordinates and bitmap information (for now)
+00000000                             9  
+00000000                            10  OBJ_INIT_REGS               REG d0-d2/a1
+00000000                            11  OBJ_DRAW_REGS               REG d2-d4
+00000000                            12  OBJ_COLLIDE_REGS            REG d2-d4
+00000000                            13  
+00000000                            14  
+00000000                            15  * constants for header struct (internal)
+00000000  =00000000                 16  OBJ_OFFS_SCREENCOORDS       EQU 0
+00000000  =00000004                 17  OBJ_OFFS_BMPCOORDS          EQU 4
+00000000  =00000008                 18  OBJ_OFFS_BMPSIZE            EQU 8
+00000000  =0000000C                 19  OBJ_OFFS_BMPADD             EQU 12
+00000000  =00000010                 20  OBJ_OFFS_CENTER             EQU 16
+00000000  =00000014                 21  OBJ_OFFS_CORNER             EQU 20
+00000000  =00000018                 22  OBJ_HEADER_SIZE             EQU 24 * !!! update this value based on your header layout
+00000000                            23  
+00000000                            24  * --- Init Obj
+00000000                            25  * Input
+00000000                            26  *   - d0.l  - Rect Coordinates
+00000000                            27  *   - d1.l  - BMP Size
+00000000                            28  *   - d2.l  - Screen Coordinates
+00000000                            29  *   - a1    - BMP Address
+00000000                            30  *
+00000000                            31  * Output
+00000000                            32  *   - a0    - Address to Obj
+00000000                            33  * ---
+00000000                            34  OBJ_init:
+00000000                            35      
+00000000                            36      * Allocate Space
+00000000  48E7 E040                 37      movem.l  OBJ_INIT_REGS, -(sp)
+00000004                            38      
+00000004  7218                      39      move.l  #OBJ_HEADER_SIZE, d1
+00000006                            40      
+Line 41 ERROR: Undefined symbol
+00000006  6100 BD0E                 41      bsr     mem_Alloc
+0000000A  4A00                      42      tst.b   d0
+0000000C  6600 0038                 43      bne     .error
+00000010                            44      
+00000010  4CDF 0207                 45      movem.l  (sp)+, OBJ_INIT_REGS
+00000014                            46      
+00000014                            47      * Fill in values
+00000014  2142 0000                 48      move.l  d2, OBJ_OFFS_SCREENCOORDS(a0)
+00000018  2140 0004                 49      move.l  d0, OBJ_OFFS_BMPCOORDS(a0)
+0000001C  2141 0008                 50      move.l  d1, OBJ_OFFS_BMPSIZE(a0)
+00000020  2149 000C                 51      move.l  a1, OBJ_OFFS_BMPADD(a0)
+00000024                            52      
+00000024                            53      * Find corner and fill in value
+00000024  D441                      54      add.w   d1, d2
+00000026  4841                      55      swap    d1
+00000028  4842                      56      swap    d2
+0000002A  D441                      57      add.w   d1, d2
+0000002C  4841                      58      swap    d1
+0000002E  4842                      59      swap    d2
+00000030  2142 0014                 60      move.l  d2, OBJ_OFFS_CORNER(a0)
+00000034                            61      
+00000034                            62      * Find center and fill in value
+00000034  E249                      63      lsr.w   #1, d1
+00000036  4841                      64      swap    d1
+00000038  E249                      65      lsr.w   #1, d1
+0000003A  4841                      66      swap    d1
+0000003C                            67      
+0000003C  2141 0010                 68      move.l  d1, OBJ_OFFS_CENTER(a0)
+00000040                            69  
+00000040                            70  .done
+00000040  103C 0000                 71      move.b  #0, d0
+00000044  4E75                      72      rts
+00000046                            73      
+00000046                            74  .error
+00000046  4CDF 0207                 75      movem.l  (sp)+, OBJ_INIT_REGS
+0000004A  103C 0001                 76      move.b  #1, d0
+0000004E  4E75                      77      rts
+00000050                            78  
+00000050                            79  * --- Set Coords
+00000050                            80  * Input
+00000050                            81  *   - a0    - Obj
+00000050                            82  *   - d0.l  - New Screen Coords
+00000050                            83  * ---
+00000050                            84  
+00000050                            85  
+00000050                            86  
+00000050                            87  OBJ_setCoords:
+00000050  2140 0000                 88      move.l  d0, OBJ_OFFS_SCREENCOORDS(a0)
+00000054  2228 0008                 89      move.l  OBJ_OFFS_BMPSIZE(a0), d1
+00000058                            90      
+00000058  4840                      91      swap    d0
+0000005A  D041                      92      add.w   d1, d0
+0000005C  4841                      93      swap    d1
+Line 94 ERROR: Invalid addressing mode
+0000005E                            94      swap    d0add.w   d1, d0
+0000005E  4841                      95      swap    d1
+00000060                            96      
+00000060  2140 0014                 97      move.l  d0, OBJ_OFFS_CORNER(a0)
+00000064  4E75                      98      rts
+00000066                            99  
+00000066                           100  * --- Get Coords
+00000066                           101  * Input
+00000066                           102  *   - a0    - Obj
+00000066                           103  * 
+00000066                           104  * Output
+00000066                           105  *   - d0    - Screen Coords
+00000066                           106  OBJ_getCoords:
+00000066  2028 0000                107      move.l  OBJ_OFFS_SCREENCOORDS(a0), d0
+0000006A  4E75                     108      rts
+0000006C                           109  
+0000006C                           110  * --- Draw Obj
+0000006C                           111  * Input
+0000006C                           112  *   - a0.l  - Obj
+0000006C                           113  *   - d0.l  - Coords
+0000006C                           114  *
+0000006C                           115  * ---
+0000006C                           116  OBJ_draw:
+0000006C  48E7 3800                117      movem.l OBJ_DRAW_REGS, -(sp)
+00000070                           118      
+00000070                           119      * --- BMP_DRAW
+00000070                           120      * a1 - address of loaded BMP
+00000070                           121      * d2.l - Point in screen coordinates to start
+00000070                           122      * d3.l - Rect starting point (x, y)
+00000070                           123      * d4.l - Rect (Width, Height)
+00000070  2268 000C                124      move.l  OBJ_OFFS_BMPADD(a0), a1
+00000074  2428 0000                125      move.l  OBJ_OFFS_SCREENCOORDS(a0), d2
+00000078  2628 0004                126      move.l  OBJ_OFFS_BMPCOORDS(a0), d3
+0000007C  2828 0008                127      move.l  OBJ_OFFS_BMPSIZE(a0), d4
+00000080                           128      
+Line 129 ERROR: Undefined symbol
+00000080  4EB9 004DBD16            129      jsr     bmp_DrawTrans
+00000086                           130  
+00000086                           131  .done
+00000086  4CDF 001C                132      movem.l (sp)+, OBJ_DRAW_REGS
+0000008A  103C 0000                133      move.b  #0, d0
+0000008E  4E75                     134      rts
+00000090                           135      
+00000090                           136  .error
+00000090  4CDF 001C                137      movem.l (sp)+, OBJ_DRAW_REGS
+00000094  103C 0001                138      move.b  #1, d0
+00000098  4E75                     139      rts
+0000009A                           140      
+0000009A                           141  * --- Draw Obj
+0000009A                           142  * Input
+0000009A                           143  *   - d0    - Proposed Coords
+0000009A                           144  *   - a0.l  - This Obj
+0000009A                           145  *   - a1.l  - Other Obj
+0000009A                           146  *
+0000009A                           147  * Output
+0000009A                           148  *   - d0.b  - 0 = true, 1 = false
+0000009A                           149  * ---    
+0000009A                           150  OBJ_Collide:
+0000009A  48E7 3800                151      movem.l OBJ_COLLIDE_REGS, -(sp)
+0000009E                           152      
+0000009E  2428 0008                153      move.l  OBJ_OFFS_BMPSIZE(a0), d2        ;a0(x+w, y+h)
+000000A2  D440                     154      add.w   d0, d2
+000000A4  4840                     155      swap    d0
+000000A6  4842                     156      swap    d2
+000000A8  D440                     157      add.w   d0, d2
+000000AA  4840                     158      swap    d0
+000000AC  4842                     159      swap    d2
+000000AE                           160  
+000000AE  2229 0000                161      move.l  OBJ_OFFS_SCREENCOORDS(a1), d1   ;a1(x, y)
+000000B2  2629 0014                162      move.l  OBJ_OFFS_CORNER(a1), d3        ;a1(x+w, y+h)
+000000B6                           163      
+000000B6                           164      * If a1(y) > a0(y+h) no collide!
+000000B6  B242                     165      cmp.w   d2, d1
+000000B8  6E00 0026                166      bgt     .no_Collide
+000000BC                           167      
+000000BC                           168      * If a1(y+h) < a0(y) no collide!
+000000BC  B640                     169      cmp.w   d0, d3
+000000BE  6D00 0020                170      blt     .no_Collide
+000000C2                           171      
+000000C2  4840                     172      swap    d0
+000000C4  4841                     173      swap    d1
+000000C6  4842                     174      swap    d2
+000000C8  4843                     175      swap    d3
+000000CA                           176      
+000000CA                           177      * If a1(x) > a0(x+w) no collide!
+000000CA  B242                     178      cmp.w   d2, d1
+000000CC  6E00 0012                179      bgt     .no_Collide
+000000D0                           180      
+000000D0                           181      * If a1(x+w) < a0(x) no collide!
+000000D0  B640                     182      cmp.w   d0, d3
+000000D2  6D00 000C                183      blt     .no_Collide
+000000D6                           184  
+000000D6                           185  .collide
+000000D6  4CDF 001C                186      movem.l (sp)+, OBJ_COLLIDE_REGS
+000000DA  103C 0000                187      move.b  #0, d0
+000000DE  4E75                     188      rts
+000000E0                           189      
+000000E0                           190  .no_Collide
+000000E0  4CDF 001C                191      movem.l (sp)+, OBJ_COLLIDE_REGS
+000000E4  103C 0001                192      move.b  #1, d0
+000000E8  4E75                     193      rts
+Line 194 WARNING: END directive missing, starting address not set
+
+3 errors detected
+1 warning generated
+
+
+SYMBOL TABLE INFORMATION
+Symbol-name         Value
+-------------------------
+OBJ_COLLIDE         9A
+OBJ_COLLIDE:COLLIDE  D6
+OBJ_COLLIDE:NO_COLLIDE  E0
+OBJ_COLLIDE_REGS    1C
+OBJ_DRAW            6C
+OBJ_DRAW:DONE       86
+OBJ_DRAW:ERROR      90
+OBJ_DRAW_REGS       1C
+OBJ_GETCOORDS       66
+OBJ_HEADER_SIZE     18
+OBJ_INIT            0
+OBJ_INIT:DONE       40
+OBJ_INIT:ERROR      46
+OBJ_INIT_REGS       207
+OBJ_OFFS_BMPADD     C
+OBJ_OFFS_BMPCOORDS  4
+OBJ_OFFS_BMPSIZE    8
+OBJ_OFFS_CENTER     10
+OBJ_OFFS_CORNER     14
+OBJ_OFFS_SCREENCOORDS  0
+OBJ_SETCOORDS       50
